@@ -1,9 +1,16 @@
 import tensorflow as tf
 import numpy as np
+import argparse
 import time
 import cv2
 import os
 import random
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--choice', type=str, default='train', help='train or test')
+
+opt = parser.parse_args()
 
 #训练最大轮次
 num_epochs = 300
@@ -308,7 +315,7 @@ def get_train_model(num_channels, label_len, b, img_size):
 
     return logits, inputs, targets, seq_len
 
-def train(a):
+def train():
 
     train_gen = TextImageGenerator(img_dir=ti,
                                    label_file=tl,
@@ -410,10 +417,13 @@ def train(a):
             saver.save(session, "./model/LPRtf3.ckpt", global_step=steps)
         return b_cost, steps
 
-    with tf.Session() as session:
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+
+    with tf.Session(config=config) as session:
         session.run(init)
         saver = tf.train.Saver(tf.global_variables(), max_to_keep=100)
-        if a=='train':
+        if opt.choice=='train':
             for curr_epoch in range(num_epochs):
                 print("Epoch.......", curr_epoch)
                 train_cost = train_ler = 0
@@ -440,7 +450,7 @@ def train(a):
                 log = "Epoch {}/{}, steps = {}, train_cost = {:.3f}, train_ler = {:.3f}, val_cost = {:.3f}, val_ler = {:.3f}, time = {:.3f}s, learning_rate = {}"
                 print(log.format(curr_epoch + 1, num_epochs, steps, train_cost, train_ler, val_cs/test_num, val_ls/test_num,
                                  time.time() - start, lr))
-        if a =='test':
+        if opt.choice =='test':
             testi='valid'
             saver.restore(session, './model8.24best/LPRtf3.ckpt-25000')
             test_gen = TextImageGenerator(img_dir=testi,
@@ -453,5 +463,4 @@ def train(a):
 
 
 if __name__ == "__main__":
-        a = input('train or test:')
-        train(a)
+    train()
